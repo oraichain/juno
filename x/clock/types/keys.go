@@ -8,4 +8,7 @@ const (
 	StoreKey = ModuleName
 
 	QuerierRoute = ModuleName
+
+	// RouterKey to be used for message routing
+	RouterKey = ModuleName
 )

@@ -4,8 +4,6 @@ import (
 	"cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/CosmosContracts/juno/v18/x/drip/types"
 )
 
 const (
@@ -30,7 +28,7 @@ func NewMsgUpdateParams(
 }
 
 // Route returns the name of the module
-func (msg MsgUpdateParams) Route() string { return types.RouterKey }
+func (msg MsgUpdateParams) Route() string { return RouterKey }
 
 // Type returns the the action
 func (msg MsgUpdateParams) Type() string { return TypeMsgUpdateParams }

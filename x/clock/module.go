@@ -8,7 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	errorsmod "cosmossdk.io/errors"
 
@@ -33,7 +33,6 @@ const (
 var (
 	_ module.AppModuleBasic   = AppModuleBasic{}
 	_ module.AppModuleGenesis = AppModule{}
-	_ module.AppModule        = AppModule{}
 )
 
 // AppModuleBasic defines the basic application module used by the wasm module.

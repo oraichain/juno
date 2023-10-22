@@ -7,11 +7,10 @@ import (
 	context "context"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
-	_ "github.com/cosmos/cosmos-sdk/types/msgservice"
-	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
+	_ "github.com/cosmos/cosmos-sdk/types/msgservice"	
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	grpc1 "github.com/cosmos/gogoproto/grpc"
-	proto "github.com/cosmos/gogoproto/proto"
+	grpc1 "github.com/cosmos/gogoproto/grpc"	
+	proto "github.com/gogo/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -132,7 +131,7 @@ var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*MsgUpdateParams)(nil), "juno.clock.v1.MsgUpdateParams")
-	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "juno.clock.v1.MsgUpdateParamsResponse")
+	proto.RegisterType((*MsgUpdateParamsResponse)(nil), "juno.clock.v1.MsgUpdateParamsResponse")	
 }
 
 func init() { proto.RegisterFile("juno/clock/v1/tx.proto", fileDescriptor_76642a1e9a85f94b) }

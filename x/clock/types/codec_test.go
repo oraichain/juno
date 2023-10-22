@@ -3,10 +3,9 @@ package types
 import (
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/suite"
 )
 
 type CodecTestSuite struct {
@@ -18,11 +17,13 @@ func TestCodecSuite(t *testing.T) {
 }
 
 func (suite *CodecTestSuite) TestRegisterInterfaces() {
+
 	registry := codectypes.NewInterfaceRegistry()
 	registry.RegisterInterface(sdk.MsgInterfaceProtoName, (*sdk.Msg)(nil))
 	RegisterInterfaces(registry)
 
 	impls := registry.ListImplementations(sdk.MsgInterfaceProtoName)
+
 	suite.Require().Equal(1, len(impls))
 	suite.Require().ElementsMatch([]string{
 		"/juno.clock.v1.MsgUpdateParams",
