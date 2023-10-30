@@ -1,0 +1,18 @@
+syntax = "proto3";
+package juno.clock.v1;
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/bank/v1beta1/bank.proto";
+import "gogoproto/gogo.proto";
+import "juno/clock/v1/genesis.proto";
+
+option go_package = "github.com/CosmosContracts/juno/v18/x/clock/types";
+
+message UpdateParamsProposal {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+  option (gogoproto.goproto_stringer) = false;
+
+  string title = 1;
+  string description = 2;
+  Params params = 3 [ (gogoproto.nullable) = false ];
+}

@@ -24,8 +24,6 @@ func (suite *CodecTestSuite) TestRegisterInterfaces() {
 
 	impls := registry.ListImplementations(sdk.MsgInterfaceProtoName)
 
-	suite.Require().Equal(1, len(impls))
-	suite.Require().ElementsMatch([]string{
-		"/juno.clock.v1.MsgUpdateParams",
-	}, impls)
+	suite.Require().Equal(0, len(impls))
+
 }

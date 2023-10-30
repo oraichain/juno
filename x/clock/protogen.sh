@@ -36,5 +36,5 @@ Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
 done
 
 # move proto files to the right places
-cp -r github.com/CosmosContracts/juno/v18/x/clock/* ./
+cp -r github.com/CosmosContracts/juno/v18/x/clock/types/* ./types
 
