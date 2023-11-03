@@ -63,7 +63,7 @@ func CmdAddContractProposal() *cobra.Command {
 				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
 			}
 
-			contractAddresse := args[0]
+			contractAddress := args[0]
 			contractGasLimit, err := strconv.ParseUint(string(args[1]), 10, 64)
 			if err != nil {
 				return fmt.Errorf("ContractGasLimit should be an unsigned integer")
@@ -71,7 +71,7 @@ func CmdAddContractProposal() *cobra.Command {
 
 			proposal := &types.UpdateParamsProposal{
 				Params: types.Params{
-					ContractAddresses: []string{contractAddresse},
+					ContractAddresses: []string{contractAddress},
 					ContractGasLimit:  contractGasLimit, // 1 billion
 				},
 				Title:       args[2],
