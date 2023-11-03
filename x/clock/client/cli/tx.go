@@ -44,8 +44,8 @@ func GetTxCmd(storeKey string) *cobra.Command {
 func CmdAddContractProposal() *cobra.Command {
 	// nolint: exhaustruct
 	cmd := &cobra.Command{
-		Use:   "add-contract [contract_addresses] [contract_gas_limit] [title] [initial-deposit] [description]",
-		Short: "Creates a governance proposal to add contract addresses to clock module",
+		Use:   "add-contract [contract_address] [contract_gas_limit] [title] [initial-deposit] [description]",
+		Short: "Creates a governance proposal to add contract address to clock module",
 		Args:  cobra.ExactArgs(8),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx, err := client.GetClientTxContext(cmd)
