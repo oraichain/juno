@@ -72,7 +72,7 @@ func CmdAddContractProposal() *cobra.Command {
 			proposal := &types.UpdateParamsProposal{
 				Params: types.Params{
 					ContractAddresses: []string{contractAddress},
-					ContractGasLimit:  contractGasLimit, // 1 billion
+					ContractGasLimit:  contractGasLimit,
 				},
 				Title:       args[2],
 				Description: args[4],
