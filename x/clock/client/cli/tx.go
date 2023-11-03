@@ -54,7 +54,7 @@ func CmdAddContractProposal() *cobra.Command {
 			}
 			cosmosAddr := cliCtx.GetFromAddress()
 
-			initialDeposit, err := sdk.ParseCoinsNormalized(args[6])
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[3])
 			if err != nil {
 				return sdkerrors.Wrap(err, "bad initial deposit amount")
 			}
