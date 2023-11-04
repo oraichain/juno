@@ -17,7 +17,6 @@ func TestCodecSuite(t *testing.T) {
 }
 
 func (suite *CodecTestSuite) TestRegisterInterfaces() {
-
 	registry := codectypes.NewInterfaceRegistry()
 	registry.RegisterInterface(sdk.MsgInterfaceProtoName, (*sdk.Msg)(nil))
 	RegisterInterfaces(registry)

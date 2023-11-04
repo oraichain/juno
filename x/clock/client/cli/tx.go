@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -52,6 +53,18 @@ func CmdAddContractProposal() *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			res, err := queryClient.ClockContracts(cmd.Context(), &types.QueryClockContracts{})
+			if err != nil {
+				return err
+			}
+
 			cosmosAddr := cliCtx.GetFromAddress()
 
 			initialDeposit, err := sdk.ParseCoinsNormalized(args[3])
@@ -64,6 +77,15 @@ func CmdAddContractProposal() *cobra.Command {
 			}
 
 			contractAddress := args[0]
+
+			// Valid address check
+			if _, err := sdk.AccAddressFromBech32(contractAddress); err != nil {
+				return errorsmod.Wrapf(
+					sdkerrors.ErrInvalidAddress,
+					"invalid contract address: %s", err.Error(),
+				)
+			}
+			newContractAddresses := append(res.ContractAddresses, contractAddress)
 			contractGasLimit, err := strconv.ParseUint(string(args[1]), 10, 64)
 			if err != nil {
 				return fmt.Errorf("ContractGasLimit should be an unsigned integer")
@@ -71,7 +93,7 @@ func CmdAddContractProposal() *cobra.Command {
 
 			proposal := &types.UpdateParamsProposal{
 				Params: types.Params{
-					ContractAddresses: []string{contractAddress},
+					ContractAddresses: newContractAddresses,
 					ContractGasLimit:  contractGasLimit,
 				},
 				Title:       args[2],
