@@ -36,6 +36,7 @@ func GetTxCmd(storeKey string) *cobra.Command {
 
 	clockTxCmd.AddCommand([]*cobra.Command{
 		CmdAddContractProposal(),
+		CmdRemoveContractProposal(),
 	}...)
 
 	return clockTxCmd
@@ -60,7 +61,7 @@ func CmdAddContractProposal() *cobra.Command {
 			}
 
 			queryClient := types.NewQueryClient(clientCtx)
-			res, err := queryClient.ClockContracts(cmd.Context(), &types.QueryClockContracts{})
+			clockContracts, err := queryClient.ClockContracts(cmd.Context(), &types.QueryClockContracts{})
 			if err != nil {
 				return err
 			}
@@ -77,7 +78,6 @@ func CmdAddContractProposal() *cobra.Command {
 			}
 
 			contractAddress := args[0]
-
 			// Valid address check
 			if _, err := sdk.AccAddressFromBech32(contractAddress); err != nil {
 				return errorsmod.Wrapf(
@@ -85,7 +85,16 @@ func CmdAddContractProposal() *cobra.Command {
 					"invalid contract address: %s", err.Error(),
 				)
 			}
-			newContractAddresses := append(res.ContractAddresses, contractAddress)
+
+			for _, addr := range clockContracts.ContractAddresses {
+				if contractAddress == addr {
+					return errorsmod.Wrapf(
+						sdkerrors.ErrInvalidAddress,
+						"duplicate contract address: %s", contractAddress,
+					)
+				}
+			}
+			newContractAddresses := append(clockContracts.ContractAddresses, contractAddress)
 			contractGasLimit, err := strconv.ParseUint(string(args[1]), 10, 64)
 			if err != nil {
 				return fmt.Errorf("ContractGasLimit should be an unsigned integer")
@@ -95,6 +104,91 @@ func CmdAddContractProposal() *cobra.Command {
 				Params: types.Params{
 					ContractAddresses: newContractAddresses,
 					ContractGasLimit:  contractGasLimit,
+				},
+				Title:       args[2],
+				Description: args[4],
+			}
+			proposalAny, err := codectypes.NewAnyWithValue(proposal)
+			if err != nil {
+				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+			}
+
+			// Make the message
+			msg := govtypes.MsgSubmitProposal{
+				Proposer:       cosmosAddr.String(),
+				InitialDeposit: initialDeposit,
+				Content:        proposalAny,
+			}
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			// Send it
+			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
+		},
+	}
+	flags.AddTxFlagsToCmd(cmd)
+	return cmd
+}
+
+// CmdRemoveContractProposal enables users to create a proposal to remove existed contract from clock module
+func CmdRemoveContractProposal() *cobra.Command {
+	// nolint: exhaustruct
+	cmd := &cobra.Command{
+		Use:   "remove-contract [contract-address] [title] [initial-deposit] [description]",
+		Short: "Creates a governance proposal to remove existed contract address from clock module",
+		Args:  cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			clockParams, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
+			if err != nil {
+				return err
+			}
+
+			cosmosAddr := cliCtx.GetFromAddress()
+			initialDeposit, err := sdk.ParseCoinsNormalized(args[2])
+			if err != nil {
+				return sdkerrors.Wrap(err, "bad initial deposit amount")
+			}
+
+			if len(initialDeposit) != 1 {
+				return fmt.Errorf("unexpected coin amounts, expecting just 1 coin amount for initialDeposit")
+			}
+
+			contractAddress := args[0]
+			// Valid address check
+			if _, err := sdk.AccAddressFromBech32(contractAddress); err != nil {
+				return errorsmod.Wrapf(
+					sdkerrors.ErrInvalidAddress,
+					"invalid contract address: %s", err.Error(),
+				)
+			}
+			index := 0
+			count := 0
+			for idx, addr := range clockParams.Params.ContractAddresses {
+				if contractAddress == addr {
+					index = idx
+					count++
+				}
+			}
+			newContractAddresses := append(clockParams.Params.ContractAddresses[:index], clockParams.Params.ContractAddresses[:index+1]...)
+			if err != nil {
+				return fmt.Errorf("ContractGasLimit should be an unsigned integer")
+			}
+
+			proposal := &types.UpdateParamsProposal{
+				Params: types.Params{
+					ContractAddresses: newContractAddresses,
+					ContractGasLimit:  clockParams.Params.ContractGasLimit,
 				},
 				Title:       args[2],
 				Description: args[4],
