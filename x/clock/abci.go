@@ -19,19 +19,19 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) {
 
 	p := k.GetParams(ctx)
 
-	errorExecs := make([]string, len(p.ContractAddresses))
+	errorExecs := []string{}
 
-	for idx, addr := range p.ContractAddresses {
+	for _, addr := range p.ContractAddresses {
 		contract, err := sdk.AccAddressFromBech32(addr)
 		if err != nil {
-			errorExecs[idx] = addr
+			errorExecs = append(errorExecs, addr)
 			continue
 		}
 
 		childCtx := ctx.WithGasMeter(sdk.NewGasMeter(p.ContractGasLimit))
 		_, err = k.GetContractKeeper().Sudo(childCtx, contract, message)
 		if err != nil {
-			errorExecs[idx] = addr
+			errorExecs = append(errorExecs, addr)
 			continue
 		}
 	}
