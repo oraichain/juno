@@ -165,24 +165,32 @@ func CmdRemoveContractProposal() *cobra.Command {
 			}
 
 			contractAddress := args[0]
+			newContractAddresses := clockParams.Params.ContractAddresses
+
 			// Valid address check
 			if _, err := sdk.AccAddressFromBech32(contractAddress); err != nil {
 				return errorsmod.Wrapf(
 					sdkerrors.ErrInvalidAddress,
-					"invalid contract address: %s", err.Error(),
+					"invalid contract address: %s", contractAddress,
 				)
 			}
+
 			index := 0
 			count := 0
-			for idx, addr := range clockParams.Params.ContractAddresses {
+			for idx, addr := range newContractAddresses {
 				if contractAddress == addr {
 					index = idx
 					count++
 				}
 			}
-			newContractAddresses := append(clockParams.Params.ContractAddresses[:index], clockParams.Params.ContractAddresses[:index+1]...)
-			if err != nil {
-				return fmt.Errorf("ContractGasLimit should be an unsigned integer")
+
+			if count > 0 {
+				newContractAddresses = append(newContractAddresses[:index], newContractAddresses[:index+1]...)
+			} else {
+				return errorsmod.Wrapf(
+					sdkerrors.ErrInvalidAddress,
+					"Cannot remove un-existed contract address: %s", contractAddress,
+				)
 			}
 
 			proposal := &types.UpdateParamsProposal{
@@ -190,8 +198,8 @@ func CmdRemoveContractProposal() *cobra.Command {
 					ContractAddresses: newContractAddresses,
 					ContractGasLimit:  clockParams.Params.ContractGasLimit,
 				},
-				Title:       args[2],
-				Description: args[4],
+				Title:       args[1],
+				Description: args[3],
 			}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
