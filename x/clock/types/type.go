@@ -4,13 +4,12 @@ import (
 	fmt "fmt"
 	"strings"
 
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
 // this file contains code related to custom governance proposals
 const (
-	BeginBlockSudoMessage    = `{"clock_begin_block":{"hash":"%s"}}`
-	EndBlockSudoMessage      = `{"clock_end_block":{}}`
+	EndBlockSudoMessage      = `{"clock_end_block":{"hash":"%s"}}`
 	ProposalTypeUpdateParams = "UpdateParams"
 )
 

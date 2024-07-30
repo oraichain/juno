@@ -13,7 +13,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
 	"github.com/CosmosContracts/juno/v18/x/clock/keeper"
 	"github.com/CosmosContracts/juno/v18/x/clock/types"
@@ -70,7 +70,7 @@ func CmdAddContractProposal() *cobra.Command {
 
 			initialDeposit, err := sdk.ParseCoinsNormalized(args[3])
 			if err != nil {
-				return sdkerrors.Wrap(err, "bad initial deposit amount")
+				return errorsmod.Wrap(err, "bad initial deposit amount")
 			}
 
 			if len(initialDeposit) != 1 {
@@ -108,20 +108,21 @@ func CmdAddContractProposal() *cobra.Command {
 				Title:       args[2],
 				Description: args[4],
 			}
+			if err := proposal.ValidateBasic(); err != nil {
+				return err
+			}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+				return errorsmod.Wrap(err, "invalid metadata or proposal details!")
 			}
 
 			// Make the message
 			msg := govtypes.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
-				Content:        proposalAny,
+				Messages:       []*codectypes.Any{proposalAny},
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
+
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},
@@ -157,7 +158,7 @@ func CmdRemoveContractProposal() *cobra.Command {
 			cosmosAddr := cliCtx.GetFromAddress()
 			initialDeposit, err := sdk.ParseCoinsNormalized(args[2])
 			if err != nil {
-				return sdkerrors.Wrap(err, "bad initial deposit amount")
+				return errorsmod.Wrap(err, "bad initial deposit amount")
 			}
 
 			if len(initialDeposit) != 1 {
@@ -201,20 +202,21 @@ func CmdRemoveContractProposal() *cobra.Command {
 				Title:       args[1],
 				Description: args[3],
 			}
+			if err := proposal.ValidateBasic(); err != nil {
+				return err
+			}
 			proposalAny, err := codectypes.NewAnyWithValue(proposal)
 			if err != nil {
-				return sdkerrors.Wrap(err, "invalid metadata or proposal details!")
+				return errorsmod.Wrap(err, "invalid metadata or proposal details!")
 			}
 
 			// Make the message
 			msg := govtypes.MsgSubmitProposal{
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
-				Content:        proposalAny,
+				Messages:       []*codectypes.Any{proposalAny},
 			}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
+
 			// Send it
 			return tx.GenerateOrBroadcastTxCLI(cliCtx, cmd.Flags(), &msg)
 		},

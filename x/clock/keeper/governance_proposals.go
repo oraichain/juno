@@ -1,12 +1,11 @@
 package keeper
 
 import (
-	"strings"
-
+	errorsmod "cosmossdk.io/errors"
 	"github.com/CosmosContracts/juno/v18/x/clock/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
 
 func RegisterProposalTypes() {
@@ -16,11 +15,8 @@ func RegisterProposalTypes() {
 	// submitting these proposals work.
 	// For some reason the cli code is run during app.go startup, but of course app.go is not
 	// run during operation of one off tx commands, so we need to run this 'twice'
-	prefix := "clock/"
-	updateParams := "clock/UpdateParams"
-	if !govtypes.IsValidProposalType(strings.TrimPrefix(updateParams, prefix)) {
+	if !govtypes.IsValidProposalType(types.ProposalTypeUpdateParams) {
 		govtypes.RegisterProposalType(types.ProposalTypeUpdateParams)
-		govtypes.RegisterProposalTypeCodec(&types.UpdateParamsProposal{}, updateParams)
 	}
 }
 
@@ -30,7 +26,7 @@ func NewClockProposalHandler(k Keeper) govtypes.Handler {
 		case *types.UpdateParamsProposal:
 			return k.HandleUpdateParamsProposal(ctx, c)
 		default:
-			return sdkerrors.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Clock proposal content type: %T", c)
+			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized Clock proposal content type: %T", c)
 		}
 	}
 }
