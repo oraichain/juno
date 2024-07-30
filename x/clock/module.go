@@ -140,10 +140,6 @@ func (a AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQuerier(a.keeper))
 }
 
-func (a AppModule) BeginBlock(ctx sdk.Context, request abci.RequestBeginBlock) {
-	BeginBlocker(ctx, a.keeper, request)
-}
-
 func (a AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	EndBlocker(ctx, a.keeper)
 	return nil

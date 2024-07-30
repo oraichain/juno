@@ -10,6 +10,6 @@ import (
 
 func TestBeginBlock(t *testing.T) {
 	hash := []byte{1, 2, 3}
-	msg := []byte(fmt.Sprintf(types.BeginBlockSudoMessage, base64.StdEncoding.EncodeToString(hash)))
+	msg := []byte(fmt.Sprintf(types.EndBlockSudoMessage, base64.StdEncoding.EncodeToString(hash)))
 	println(string(msg))
 }
