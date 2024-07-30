@@ -9,6 +9,7 @@ import (
 
 // this file contains code related to custom governance proposals
 const (
+	BeginBlockSudoMessage    = `{"clock_begin_block":{"hash":"%s"}}`
 	EndBlockSudoMessage      = `{"clock_end_block":{}}`
 	ProposalTypeUpdateParams = "UpdateParams"
 )
