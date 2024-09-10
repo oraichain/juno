@@ -121,6 +121,8 @@ func CmdAddContractProposal() *cobra.Command {
 				Proposer:       cosmosAddr.String(),
 				InitialDeposit: initialDeposit,
 				Messages:       []*codectypes.Any{proposalAny},
+				Title:          proposal.Title,
+				Summary:        proposal.Title,
 			}
 
 			// Send it
