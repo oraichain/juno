@@ -112,6 +112,11 @@ func (am AppModule) IsOnePerModuleType() {}
 // IsAppModule implements the appmodule.AppModule interface.
 func (am AppModule) IsAppModule() {}
 
+// Name returns the x/tokenfactory module's name.
+func (am AppModule) Name() string {
+	return am.AppModuleBasic.Name()
+}
+
 func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	marshaler.MustUnmarshalJSON(message, &genesisState)
@@ -137,9 +142,17 @@ func (a AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQuerier(a.keeper))
 }
 
-func (a AppModule) EndBlock(ctx sdk.Context) error {
-	EndBlocker(ctx, a.keeper)
+// BeginBlock executes all ABCI BeginBlock logic respective to the tokenfactory module.
+func (a AppModule) BeginBlock(_ context.Context) error {
 	return nil
+}
+
+// EndBlock returns the end blocker for the staking module. It returns no validator
+// updates.
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	EndBlocker(sdkCtx, am.keeper)
+	return nil, nil
 }
 
 // ConsensusVersion is a sequence number for state-breaking change of the
