@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -25,13 +24,10 @@ func init() {
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(Params{}, "juno/x/clock/Params", nil)
 	cdc.RegisterConcrete(UpdateParamsProposal{}, "clock/UpdateParams", nil)
-	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "clock/MsgUpdateParams")
 }
 
 func RegisterInterfaces(registry types.InterfaceRegistry) {
-	registry.RegisterInterface("juno.clock.v1.UpdateParamsProposal", (*sdk.Msg)(nil), &UpdateParamsProposal{})
 	registry.RegisterImplementations((*govtypes.Content)(nil), &UpdateParamsProposal{})
-
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},

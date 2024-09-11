@@ -15,7 +15,6 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
-	"github.com/CosmosContracts/juno/v18/x/clock/keeper"
 	"github.com/CosmosContracts/juno/v18/x/clock/types"
 )
 
@@ -23,7 +22,6 @@ import (
 func GetTxCmd(storeKey string) *cobra.Command {
 	// needed for governance proposal txs in cli case
 	// internal check prevents double registration in node case
-	keeper.RegisterProposalTypes()
 
 	// nolint: exhaustruct
 	clockTxCmd := &cobra.Command{

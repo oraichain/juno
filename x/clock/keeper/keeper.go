@@ -16,18 +16,28 @@ type Keeper struct {
 	cdc      codec.BinaryCodec
 
 	contractKeeper wasmkeeper.PermissionedKeeper
+	// the address capable of executing a MsgUpdateParams message. Typically, this
+	// should be the x/gov module account.
+	authority string
 }
 
 func NewKeeper(
 	key storetypes.StoreKey,
 	cdc codec.BinaryCodec,
 	contractKeeper wasmkeeper.PermissionedKeeper,
+	authority string,
 ) Keeper {
 	return Keeper{
 		cdc:            cdc,
 		storeKey:       key,
 		contractKeeper: contractKeeper,
+		authority:      authority,
 	}
+}
+
+// GetAuthority returns the x/mint module's authority.
+func (k Keeper) GetAuthority() string {
+	return k.authority
 }
 
 // SetParams sets the x/clock module parameters.
