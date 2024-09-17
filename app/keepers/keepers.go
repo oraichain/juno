@@ -7,7 +7,6 @@ import (
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	"github.com/CosmosContracts/juno/v15/x/globalfee"
 	globalfeekeeper "github.com/CosmosContracts/juno/v15/x/globalfee/keeper"
 	globalfeetypes "github.com/CosmosContracts/juno/v15/x/globalfee/types"
 	mintkeeper "github.com/CosmosContracts/juno/v15/x/mint/keeper"
@@ -518,7 +517,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(wasm.ModuleName)
 	paramsKeeper.Subspace(tokenfactorytypes.ModuleName)
 	paramsKeeper.Subspace(feesharetypes.ModuleName)
-	paramsKeeper.Subspace(globalfee.ModuleName)
+	paramsKeeper.Subspace(globalfeetypes.ModuleName)
 
 	return paramsKeeper
 }
