@@ -6,10 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	icacontrollertypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/types"
-	icagenesistypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/genesis/types"
-	icahosttypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/host/types"
-	icatypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -38,18 +37,18 @@ func AddGenesisIcaCmd(defaultNodeHome string) *cobra.Command {
 				return fmt.Errorf("failed to unmarshal genesis state: %w", err)
 			}
 
-			controllerGenesisState := icagenesistypes.DefaultControllerGenesis()
+			controllerGenesisState := icatypes.DefaultControllerGenesis()
 			// no params set in upgrade handler, no params set here
 			controllerGenesisState.Params = icacontrollertypes.Params{}
 
-			hostGenesisState := icagenesistypes.DefaultHostGenesis()
+			hostGenesisState := icatypes.DefaultHostGenesis()
 			// add the messages we want (from old upgrade handler)
 			hostGenesisState.Params = icahosttypes.Params{
 				HostEnabled:   true,
 				AllowMessages: []string{"*"},
 			}
 
-			newIcaGenState := icagenesistypes.NewGenesisState(controllerGenesisState, hostGenesisState)
+			newIcaGenState := icatypes.NewGenesisState(controllerGenesisState, hostGenesisState)
 
 			icaGenStateBz, err := clientCtx.Codec.MarshalJSON(newIcaGenState)
 			if err != nil {

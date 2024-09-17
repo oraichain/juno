@@ -5,7 +5,7 @@ import "cosmos/bank/v1beta1/bank.proto";
 import "gogoproto/gogo.proto";
 import "juno/clock/v1/genesis.proto";
 
-option go_package = "github.com/CosmosContracts/juno/v18/x/clock/types";
+option go_package = "github.com/CosmosContracts/juno/v15/x/clock/types";
 
 message UpdateParamsProposal {
   option (gogoproto.equal) = false;

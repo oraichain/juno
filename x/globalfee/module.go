@@ -3,15 +3,14 @@ package globalfee
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,9 +18,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/CosmosContracts/juno/v18/x/globalfee/client/cli"
-	"github.com/CosmosContracts/juno/v18/x/globalfee/keeper"
-	"github.com/CosmosContracts/juno/v18/x/globalfee/types"
+	"github.com/CosmosContracts/juno/v15/x/globalfee/client/cli"
+	"github.com/CosmosContracts/juno/v15/x/globalfee/keeper"
+	"github.com/CosmosContracts/juno/v15/x/globalfee/types"
 )
 
 var (
@@ -55,7 +54,7 @@ func (a AppModuleBasic) ValidateGenesis(marshaler codec.JSONCodec, _ client.TxEn
 		return err
 	}
 	if err := data.Params.Validate(); err != nil {
-		return errorsmod.Wrap(err, "params")
+		return sdkerrors.Wrap(err, "params")
 	}
 	return nil
 }
@@ -109,6 +108,16 @@ func NewAppModule(
 	}
 }
 
+// LegacyQuerierHandler returns the capability module's Querier.
+func (a AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
+	return nil
+}
+
+// Route returns the capability module's message routing key.
+func (a AppModule) Route() sdk.Route {
+	return sdk.NewRoute(types.RouterKey, nil)
+}
+
 func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	marshaler.MustUnmarshalJSON(message, &genesisState)
@@ -131,13 +140,7 @@ func (a AppModule) QuerierRoute() string {
 }
 
 func (a AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(a.keeper))
 	types.RegisterQueryServer(cfg.QueryServer(), NewGrpcQuerier(a.keeper))
-
-	m := keeper.NewMigrator(a.keeper, a.bondDenom)
-	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
-	}
 }
 
 func (a AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {

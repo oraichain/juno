@@ -1,7 +1,7 @@
 package cmd
 
 // modified from osmosis
-// https://github.com/CosmosContracts/juno/v18/blob/main/cmd/osmosisd/cmd/balances_from_state_export.go
+// https://github.com/osmosis-labs/osmosis/blob/main/cmd/osmosisd/cmd/balances_from_state_export.go
 
 import (
 	"encoding/csv"
@@ -12,19 +12,15 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmtypes "github.com/tendermint/tendermint/types"
 
-	tmjson "github.com/cometbft/cometbft/libs/json"
-	tmtypes "github.com/cometbft/cometbft/types"
-
-	"cosmossdk.io/math"
-
+	appparams "github.com/CosmosContracts/juno/v15/app/params"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
-	appparams "github.com/CosmosContracts/juno/v18/app/params"
 )
 
 const (
@@ -41,8 +37,8 @@ type DeriveSnapshot struct {
 type DerivedAccount struct {
 	Address        string    `json:"address"`
 	LiquidBalances sdk.Coins `json:"liquid_balance"`
-	Staked         math.Int  `json:"staked"`
-	UnbondingStake math.Int  `json:"unbonding_stake"`
+	Staked         sdk.Int   `json:"staked"`
+	UnbondingStake sdk.Int   `json:"unbonding_stake"`
 	Bonded         sdk.Coins `json:"bonded"`
 	TotalBalances  sdk.Coins `json:"total_balances"`
 }

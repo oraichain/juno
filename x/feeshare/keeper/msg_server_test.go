@@ -2,16 +2,12 @@ package keeper_test
 
 import (
 	"crypto/sha256"
-
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-
 	_ "embed"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/CosmosContracts/juno/v15/x/feeshare/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-
-	"github.com/CosmosContracts/juno/v18/x/feeshare/types"
 )
 
 //go:embed testdata/reflect.wasm
@@ -31,7 +27,7 @@ func (s *IntegrationTestSuite) StoreCode() {
 	expHash := sha256.Sum256(wasmContract)
 	s.Require().Equal(expHash[:], result.Checksum)
 	// and
-	info := s.app.AppKeepers.WasmKeeper.GetCodeInfo(s.ctx, 1)
+	info := s.app.WasmKeeper.GetCodeInfo(s.ctx, 1)
 	s.Require().NotNil(info)
 	s.Require().Equal(expHash[:], info.CodeHash)
 	s.Require().Equal(sender.String(), info.Creator)
@@ -55,7 +51,7 @@ func (s *IntegrationTestSuite) InstantiateContract(sender string, admin string) 
 	s.Require().NoError(err)
 	var result wasmtypes.MsgInstantiateContractResponse
 	s.Require().NoError(s.app.AppCodec().Unmarshal(resp.Data, &result))
-	contractInfo := s.app.AppKeepers.WasmKeeper.GetContractInfo(s.ctx, sdk.MustAccAddressFromBech32(result.Address))
+	contractInfo := s.app.WasmKeeper.GetContractInfo(s.ctx, sdk.MustAccAddressFromBech32(result.Address))
 	s.Require().Equal(contractInfo.CodeID, uint64(1))
 	s.Require().Equal(contractInfo.Admin, admin)
 	s.Require().Equal(contractInfo.Creator, sender)
@@ -100,10 +96,10 @@ func (s *IntegrationTestSuite) TestGetContractAdminOrCreatorAddress() {
 		tc := tc
 		s.Run(tc.desc, func() {
 			if !tc.shouldErr {
-				_, err := s.app.AppKeepers.FeeShareKeeper.GetContractAdminOrCreatorAddress(s.ctx, sdk.MustAccAddressFromBech32(tc.contractAddress), tc.deployerAddress)
+				_, err := s.app.FeeShareKeeper.GetContractAdminOrCreatorAddress(s.ctx, sdk.MustAccAddressFromBech32(tc.contractAddress), tc.deployerAddress)
 				s.Require().NoError(err)
 			} else {
-				_, err := s.app.AppKeepers.FeeShareKeeper.GetContractAdminOrCreatorAddress(s.ctx, sdk.MustAccAddressFromBech32(tc.contractAddress), tc.deployerAddress)
+				_, err := s.app.FeeShareKeeper.GetContractAdminOrCreatorAddress(s.ctx, sdk.MustAccAddressFromBech32(tc.contractAddress), tc.deployerAddress)
 				s.Require().Error(err)
 			}
 		})
@@ -114,14 +110,8 @@ func (s *IntegrationTestSuite) TestRegisterFeeShare() {
 	_, _, sender := testdata.KeyTestPubAddr()
 	_ = s.FundAccount(s.ctx, sender, sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(1_000_000))))
 
-	gov := s.accountKeeper.GetModuleAddress(govtypes.ModuleName).String()
-	govContract := s.InstantiateContract(sender.String(), gov)
-
 	contractAddress := s.InstantiateContract(sender.String(), "")
 	contractAddress2 := s.InstantiateContract(contractAddress, contractAddress)
-
-	DAODAO := s.InstantiateContract(sender.String(), "")
-	subContract := s.InstantiateContract(DAODAO, DAODAO)
 
 	_, _, withdrawer := testdata.KeyTestPubAddr()
 
@@ -187,36 +177,6 @@ func (s *IntegrationTestSuite) TestRegisterFeeShare() {
 				ContractAddress:   contractAddress2,
 				DeployerAddress:   sender.String(),
 				WithdrawerAddress: contractAddress2,
-			},
-			resp:      &types.MsgRegisterFeeShareResponse{},
-			shouldErr: false,
-		},
-		{
-			desc: "Invalid register gov contract withdraw address",
-			msg: &types.MsgRegisterFeeShare{
-				ContractAddress:   govContract,
-				DeployerAddress:   sender.String(),
-				WithdrawerAddress: sender.String(),
-			},
-			resp:      &types.MsgRegisterFeeShareResponse{},
-			shouldErr: true,
-		},
-		{
-			desc: "Success register gov contract withdraw address to self",
-			msg: &types.MsgRegisterFeeShare{
-				ContractAddress:   govContract,
-				DeployerAddress:   sender.String(),
-				WithdrawerAddress: govContract,
-			},
-			resp:      &types.MsgRegisterFeeShareResponse{},
-			shouldErr: false,
-		},
-		{
-			desc: "Success register contract from DAODAO contract as admin",
-			msg: &types.MsgRegisterFeeShare{
-				ContractAddress:   subContract,
-				DeployerAddress:   DAODAO,
-				WithdrawerAddress: DAODAO,
 			},
 			resp:      &types.MsgRegisterFeeShareResponse{},
 			shouldErr: false,

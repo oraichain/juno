@@ -17,10 +17,11 @@ endif
 PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
 LEDGER_ENABLED ?= true
 SDK_PACK := $(shell go list -m github.com/cosmos/cosmos-sdk | sed  's/ /\@/g')
-BFT_VERSION := $(shell go list -m github.com/cometbft/cometbft | sed 's:.* ::') # grab everything after the space in "github.com/cometbft/cometbft v0.34.7"
+TM_VERSION := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::') # grab everything after the space in "github.com/tendermint/tendermint v0.34.7"
 DOCKER := $(shell which docker)
 DOCKER_BUF := $(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace bufbuild/buf:1.0.0-rc8
 BUILDDIR ?= $(CURDIR)/build
+E2E_UPGRADE_VERSION := "v14"
 export GO111MODULE = on
 
 # process build tags
@@ -67,7 +68,7 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=juno \
 		  -X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
 		  -X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
 		  -X "github.com/cosmos/cosmos-sdk/version.BuildTags=$(build_tags_comma_sep)" \
-			-X github.com/cometbft/cometbft/version.TMCoreSemVer=$(BFT_VERSION)
+			-X github.com/tendermint/tendermint/version.TMCoreSemVer=$(TM_VERSION)
 
 ifeq (cleveldb,$(findstring cleveldb,$(JUNO_BUILD_OPTIONS)))
   ldflags += -X github.com/cosmos/cosmos-sdk/types.DBBackend=cleveldb
@@ -102,9 +103,6 @@ install: go.sum
 build:
 	go build $(BUILD_FLAGS) -o bin/junod ./cmd/junod
 
-test-node:
-	CHAIN_ID="local-1" HOME_DIR="~/.juno1" TIMEOUT_COMMIT="500ms" CLEAN=true sh scripts/test_node.sh
-
 ###############################################################################
 ###                                Testing                                  ###
 ###############################################################################
@@ -121,61 +119,24 @@ benchmark:
 ###############################################################################
 
 # Executes basic chain tests via interchaintest
-ictest-basic: rm-testcache
-	cd interchaintest && go test -race -v -run TestBasicJunoStart .
-
-ictest-statesync: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoStateSync .
-
-ictest-ibchooks: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoIBCHooks .
-
-ictest-tokenfactory: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoTokenFactory .
-
-ictest-feeshare: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoFeeShare .
-
-ictest-pfm: rm-testcache
-	cd interchaintest && go test -race -v -run TestPacketForwardMiddlewareRouter .
+ictest-basic:
+	cd tests/interchaintest && go test -race -v -run TestBasicJunoStart .
 
 # Executes a basic chain upgrade test via interchaintest
-ictest-upgrade: rm-testcache
-	cd interchaintest && go test -race -v -run TestBasicJunoUpgrade .
+ictest-upgrade:
+	cd tests/interchaintest && go test -race -v -run TestBasicJunoUpgrade .
 
 # Executes a basic chain upgrade locally via interchaintest after compiling a local image as juno:local
 ictest-upgrade-local: local-image ictest-upgrade
 
 # Executes IBC tests via interchaintest
-ictest-ibc: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoGaiaIBCTransfer .
+ictest-ibc:
+	cd tests/interchaintest && go test -race -v -run TestJunoGaiaIBCTransfer .
 
-# Unity contract CI
-ictest-unity-deploy: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoUnityContractDeploy .
+# Executes all tests via interchaintest after compling a local image as juno:local
+ictest-all: local-image ictest-basic ictest-upgrade ictest-ibc
 
-ictest-unity-gov: rm-testcache
-	cd interchaintest && go test -race -v -run TestJunoUnityContractGovSubmit .
-
-ictest-pob: rm-testcache
-	cd interchaintest &&  go test -race -v -run TestJunoPOB .
-
-ictest-drip: rm-testcache
-	cd interchaintest &&  go test -race -v -run TestJunoDrip .
-
-ictest-burn: rm-testcache
-	cd interchaintest &&  go test -race -v -run TestJunoBurnModule .
-
-ictest-cwhooks: rm-testcache
-	cd interchaintest &&  go test -race -v -run TestJunoCwHooks .
-
-ictest-clock: rm-testcache
-	cd interchaintest &&  go test -race -v -run TestJunoClock .
-
-rm-testcache:
-	go clean -testcache
-
-.PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc ictest-unity-deploy ictest-unity-gov ictest-pob
+.PHONY: test-mutation ictest-basic ictest-upgrade ictest-ibc ictest-all
 
 ###############################################################################
 ###                                  heighliner                             ###
@@ -195,31 +156,43 @@ endif
 .PHONY: get-heighliner local-image
 
 ###############################################################################
-###                                Protobuf                                 ###
+###                                  Proto                                  ###
 ###############################################################################
 
-protoVer=0.13.1
-protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
-protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
+protoVer=v0.7
+protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
+containerProtoGen=juno-proto-gen-$(protoVer)
+containerProtoGenAny=juno-proto-gen-any-$(protoVer)
+containerProtoGenSwagger=juno-proto-gen-swagger-$(protoVer)
+containerProtoFmt=juno-proto-fmt-$(protoVer)
 
 proto-all: proto-format proto-lint proto-gen
 
 proto-gen:
 	@echo "Generating Protobuf files"
-	@$(protoImage) sh ./scripts/protocgen.sh
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGen}$$"; then docker start -a $(containerProtoGen); else docker run --name $(containerProtoGen) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protocgen.sh; fi
+
+# This generates the SDK's custom wrapper for google.protobuf.Any. It should only be run manually when needed
+proto-gen-any:
+	@echo "Generating Protobuf Any"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGenAny}$$"; then docker start -a $(containerProtoGenAny); else docker run --name $(containerProtoGenAny) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protocgen-any.sh; fi
 
 proto-swagger-gen:
 	@echo "Generating Protobuf Swagger"
-	@$(protoImage) sh ./scripts/protoc-swagger-gen.sh
-	$(MAKE) update-swagger-docs
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoGenSwagger}$$"; then docker start -a $(containerProtoGenSwagger); else docker run --name $(containerProtoGenSwagger) -v $(CURDIR):/workspace --workdir /workspace $(protoImageName) \
+		sh ./scripts/protoc-swagger-gen.sh; fi
 
 proto-format:
-	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
+	@echo "Formatting Protobuf files"
+	@if docker ps -a --format '{{.Names}}' | grep -Eq "^${containerProtoFmt}$$"; then docker start -a $(containerProtoFmt); else docker run --name $(containerProtoFmt) -v $(CURDIR):/workspace --workdir /workspace tendermintdev/docker-build-proto \
+		find ./ -not -path "./third_party/*" -name "*.proto" -exec clang-format -i {} \; ; fi
 
 proto-lint:
-	@$(protoImage) buf lint --error-format=json
+	@$(DOCKER_BUF) lint --error-format=json
 
 proto-check-breaking:
-	@$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
+	@$(DOCKER_BUF) breaking --against $(HTTPS_GIT)#branch=main
 
 .PHONY: proto-all proto-gen proto-gen-any proto-swagger-gen proto-format proto-lint proto-check-breaking proto-update-deps docs

@@ -3,15 +3,13 @@ package ante
 import (
 	"errors"
 
-	tmstrings "github.com/cometbft/cometbft/libs/strings"
-
-	errorsmod "cosmossdk.io/errors"
+	tmstrings "github.com/tendermint/tendermint/libs/strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
-	globalfeekeeper "github.com/CosmosContracts/juno/v18/x/globalfee/keeper"
+	globalfeekeeper "github.com/CosmosContracts/juno/v15/x/globalfee/keeper"
 )
 
 // FeeWithBypassDecorator checks if the transaction's fee is at least as large
@@ -47,7 +45,7 @@ func NewFeeDecorator(bypassMsgTypes []string, gfk globalfeekeeper.Keeper, sk sta
 func (mfd FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must implement the sdk.FeeTx interface")
+		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "Tx must implement the sdk.FeeTx interface")
 	}
 
 	// Only check for minimum fees and global fee if the execution mode is CheckTx
@@ -73,7 +71,7 @@ func (mfd FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	// global fee is set to its default value, i.e. 0uatom, if empty
 	combinedFeeRequirement := CombinedFeeRequirement(requiredGlobalFees, localFees)
 	if len(combinedFeeRequirement) == 0 {
-		return ctx, errorsmod.Wrapf(sdkerrors.ErrNotFound, "required fees are not setup.")
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrNotFound, "required fees are not setup.")
 	}
 
 	nonZeroCoinFeesReq, zeroCoinFeesDenomReq := getNonZeroFees(combinedFeeRequirement)
@@ -88,7 +86,7 @@ func (mfd FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 	// if feeCoinsNoZeroDenom=[], DenomsSubsetOf returns true
 	// if feeCoinsNoZeroDenom is not empty, but nonZeroCoinFeesReq empty, return false
 	if !feeCoinsNonZeroDenom.DenomsSubsetOf(nonZeroCoinFeesReq) {
-		return ctx, errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "this fee denom is not accepted; got %s, one is required: %s", feeCoins, PrettyPrint(combinedFeeRequirement))
+		return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "fee is not a subset of required fees; got %s, required: %s", feeCoins, combinedFeeRequirement)
 	}
 
 	// Accept zero fee transactions only if both of the following statements are true:
@@ -125,11 +123,7 @@ func (mfd FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, ne
 		// because when nonZeroCoinFeesReq empty, and DenomsSubsetOf check passed,
 		// the tx should already passed before)
 		if !feeCoinsNonZeroDenom.IsAnyGTE(nonZeroCoinFeesReq) {
-			if len(feeCoins) == 0 {
-				return ctx, errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "no fees were specified; one fee must be provided %s", PrettyPrint(combinedFeeRequirement))
-			}
-
-			return ctx, errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; only got: %s. one is required: %s. ", feeCoins, PrettyPrint(combinedFeeRequirement))
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInsufficientFee, "insufficient fees; got: %s required: %s", feeCoins, combinedFeeRequirement)
 		}
 	}
 

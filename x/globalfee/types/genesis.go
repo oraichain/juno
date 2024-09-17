@@ -3,7 +3,7 @@ package types
 import (
 	"encoding/json"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 )
@@ -34,7 +34,7 @@ func GetGenesisStateFromAppState(cdc codec.Codec, appState map[string]json.RawMe
 
 func ValidateGenesis(data GenesisState) error {
 	if err := data.Params.Validate(); err != nil {
-		return errorsmod.Wrap(err, "globalfee params")
+		return sdkerrors.Wrap(err, "globalfee params")
 	}
 
 	return nil

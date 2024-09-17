@@ -2,45 +2,32 @@ package feeshare_test
 
 import (
 	"encoding/json"
-	"path/filepath"
-	"testing"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 
-	dbm "github.com/cometbft/cometbft-db"
-	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	junoapp "github.com/CosmosContracts/juno/v15/app"
+	"github.com/cosmos/cosmos-sdk/simapp"
 
-	bam "github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/snapshots"
-	snapshottypes "github.com/cosmos/cosmos-sdk/snapshots/types"
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	"github.com/CosmosContracts/juno/v15/x/mint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	junoapp "github.com/CosmosContracts/juno/v18/app"
-	"github.com/CosmosContracts/juno/v18/x/mint/types"
 )
 
 // returns context and an app with updated mint keeper
-func CreateTestApp(t *testing.T, isCheckTx bool) (*junoapp.App, sdk.Context) {
-	app := Setup(t, isCheckTx)
+func CreateTestApp(isCheckTx bool) (*junoapp.App, sdk.Context) {
+	app := Setup(isCheckTx)
 
-	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{
-		ChainID: "testing",
-	})
-	if err := app.AppKeepers.MintKeeper.SetParams(ctx, types.DefaultParams()); err != nil {
-		panic(err)
-	}
-	app.AppKeepers.MintKeeper.SetMinter(ctx, types.DefaultInitialMinter())
+	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{})
+	app.MintKeeper.SetParams(ctx, types.DefaultParams())
+	app.MintKeeper.SetMinter(ctx, types.DefaultInitialMinter())
 
 	return app, ctx
 }
 
-func Setup(t *testing.T, isCheckTx bool) *junoapp.App {
-	app, genesisState := GenApp(t, !isCheckTx)
+func Setup(isCheckTx bool) *junoapp.App {
+	app, genesisState := GenApp(!isCheckTx, 5)
 	if !isCheckTx {
 		// init chain must be called to stop deliverState from being nil
 		stateBytes, err := json.MarshalIndent(genesisState, "", " ")
@@ -51,11 +38,9 @@ func Setup(t *testing.T, isCheckTx bool) *junoapp.App {
 		// Initialize the chain
 		app.InitChain(
 			abci.RequestInitChain{
-				Validators: []abci.ValidatorUpdate{},
-				// ConsensusParams: &tmproto.ConsensusParams{},
-				ConsensusParams: junoapp.DefaultConsensusParams,
+				Validators:      []abci.ValidatorUpdate{},
+				ConsensusParams: simapp.DefaultConsensusParams,
 				AppStateBytes:   stateBytes,
-				ChainId:         "testing",
 			},
 		)
 	}
@@ -63,31 +48,25 @@ func Setup(t *testing.T, isCheckTx bool) *junoapp.App {
 	return app
 }
 
-func GenApp(t *testing.T, withGenesis bool, opts ...wasmkeeper.Option) (*junoapp.App, junoapp.GenesisState) {
+func GenApp(withGenesis bool, invCheckPeriod uint) (*junoapp.App, junoapp.GenesisState) {
 	db := dbm.NewMemDB()
-	nodeHome := t.TempDir()
-	snapshotDir := filepath.Join(nodeHome, "data", "snapshots")
-
-	snapshotDB, err := dbm.NewDB("metadata", dbm.GoLevelDBBackend, snapshotDir)
-	require.NoError(t, err)
-	t.Cleanup(func() { snapshotDB.Close() })
-	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
-	require.NoError(t, err)
-
+	encCdc := junoapp.MakeEncodingConfig()
 	app := junoapp.New(
 		log.NewNopLogger(),
 		db,
 		nil,
 		true,
-		wasmtypes.EnableAllProposals,
-		simtestutil.EmptyAppOptions{},
-		opts,
-		bam.SetChainID("testing"),
-		bam.SetSnapshot(snapshotStore, snapshottypes.SnapshotOptions{KeepRecent: 2}),
+		map[int64]bool{},
+		simapp.DefaultNodeHome,
+		invCheckPeriod,
+		encCdc,
+		junoapp.GetEnabledProposals(),
+		simapp.EmptyAppOptions{},
+		junoapp.GetWasmOpts(simapp.EmptyAppOptions{}),
 	)
 
 	if withGenesis {
-		return app, junoapp.NewDefaultGenesisState(app.AppCodec())
+		return app, junoapp.NewDefaultGenesisState(encCdc.Marshaler)
 	}
 
 	return app, junoapp.GenesisState{}

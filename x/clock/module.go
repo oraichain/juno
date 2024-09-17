@@ -10,7 +10,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,9 +18,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/CosmosContracts/juno/v18/x/clock/client/cli"
-	"github.com/CosmosContracts/juno/v18/x/clock/keeper"
-	"github.com/CosmosContracts/juno/v18/x/clock/types"
+	"github.com/CosmosContracts/juno/v15/x/clock/client/cli"
+	"github.com/CosmosContracts/juno/v15/x/clock/keeper"
+	"github.com/CosmosContracts/juno/v15/x/clock/types"
 )
 
 const (
@@ -57,7 +57,7 @@ func (a AppModuleBasic) ValidateGenesis(marshaler codec.JSONCodec, _ client.TxEn
 		return err
 	}
 	if err := data.Params.Validate(); err != nil {
-		return errorsmod.Wrap(err, "params")
+		return sdkerrors.Wrap(err, "params")
 	}
 	return nil
 }

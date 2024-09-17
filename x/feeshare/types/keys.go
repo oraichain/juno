@@ -2,6 +2,7 @@ package types
 
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
+// constants
 const (
 	// module name
 	ModuleName = "feeshare"
@@ -18,7 +19,6 @@ const (
 	prefixFeeShare = iota + 1
 	prefixDeployer
 	prefixWithdrawer
-	prefixParams
 )
 
 // KVStore key prefixes
@@ -26,7 +26,6 @@ var (
 	KeyPrefixFeeShare   = []byte{prefixFeeShare}
 	KeyPrefixDeployer   = []byte{prefixDeployer}
 	KeyPrefixWithdrawer = []byte{prefixWithdrawer}
-	ParamsKey           = []byte{prefixParams}
 )
 
 // GetKeyPrefixDeployer returns the KVStore key prefix for storing

@@ -3,21 +3,24 @@ package v13
 import (
 	"fmt"
 
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
-	// ICA
-	icacontrollertypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/types"
-	icahosttypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/host/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
+	"github.com/CosmosContracts/juno/v15/app/keepers"
 
+	"github.com/CosmosContracts/juno/v15/app/upgrades"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/CosmosContracts/juno/v18/app/keepers"
-	"github.com/CosmosContracts/juno/v18/app/upgrades"
+	// ICA
+	icacontrollertypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/types"
+	icahosttypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/host/types"
+	icatypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/types"
+
 	// types
-	feesharetypes "github.com/CosmosContracts/juno/v18/x/feeshare/types"
-	tokenfactorytypes "github.com/CosmosContracts/juno/v18/x/tokenfactory/types"
+	tokenfactorytypes "github.com/CosmWasm/token-factory/x/tokenfactory/types"
+	feesharetypes "github.com/CosmosContracts/juno/v15/x/feeshare/types"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ibcfeetypes "github.com/cosmos/ibc-go/v4/modules/apps/29-fee/types"
+
+	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v4/router/types"
 )
 
 func CreateV13UpgradeHandler(
@@ -34,7 +37,7 @@ func CreateV13UpgradeHandler(
 		logger.Info(fmt.Sprintf("With native denom %s", nativeDenom))
 
 		// ICA - https://github.com/CosmosContracts/juno/blob/integrate_ica_changes/app/app.go#L846-L885
-		// vm[icatypes.ModuleName] = mm.Modules[icatypes.ModuleName].ConsensusVersion()
+		vm[icatypes.ModuleName] = mm.Modules[icatypes.ModuleName].ConsensusVersion()
 		logger.Info("upgraded icatypes version")
 
 		// Update ICS27 Host submodule params
@@ -45,7 +48,7 @@ func CreateV13UpgradeHandler(
 		}
 
 		// IBCFee
-		// vm[ibcfeetypes.ModuleName] = mm.Modules[ibcfeetypes.ModuleName].ConsensusVersion()
+		vm[ibcfeetypes.ModuleName] = mm.Modules[ibcfeetypes.ModuleName].ConsensusVersion()
 		logger.Info(fmt.Sprintf("ibcfee module version %s set", fmt.Sprint(vm[ibcfeetypes.ModuleName])))
 
 		// Run migrations
@@ -62,9 +65,7 @@ func CreateV13UpgradeHandler(
 		newTokenFactoryParams := tokenfactorytypes.Params{
 			DenomCreationFee: sdk.NewCoins(sdk.NewCoin(nativeDenom, sdk.NewInt(1000000))),
 		}
-		if err := keepers.TokenFactoryKeeper.SetParams(ctx, newTokenFactoryParams); err != nil {
-			return nil, err
-		}
+		keepers.TokenFactoryKeeper.SetParams(ctx, newTokenFactoryParams)
 		logger.Info("set tokenfactory params")
 
 		// FeeShare
@@ -73,9 +74,7 @@ func CreateV13UpgradeHandler(
 			DeveloperShares: sdk.NewDecWithPrec(50, 2), // = 50%
 			AllowedDenoms:   []string{nativeDenom},
 		}
-		if err := keepers.FeeShareKeeper.SetParams(ctx, newFeeShareParams); err != nil {
-			return nil, err
-		}
+		keepers.FeeShareKeeper.SetParams(ctx, newFeeShareParams)
 		logger.Info("set feeshare params")
 
 		// Packet Forward middleware initial params

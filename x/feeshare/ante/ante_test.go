@@ -3,11 +3,10 @@ package ante_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/suite"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	ante "github.com/CosmosContracts/juno/v18/x/feeshare/ante"
+	ante "github.com/CosmosContracts/juno/v15/x/feeshare/ante"
 )
 
 type AnteTestSuite struct {

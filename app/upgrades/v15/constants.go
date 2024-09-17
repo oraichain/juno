@@ -1,9 +1,8 @@
-package v15
+package v14
 
 import (
+	"github.com/CosmosContracts/juno/v15/app/upgrades"
 	store "github.com/cosmos/cosmos-sdk/store/types"
-
-	"github.com/CosmosContracts/juno/v18/app/upgrades"
 )
 
 // UpgradeName defines the on-chain upgrade name for the upgrade.

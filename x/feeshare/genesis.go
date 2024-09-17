@@ -3,8 +3,8 @@ package feeshare
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CosmosContracts/juno/v18/x/feeshare/keeper"
-	"github.com/CosmosContracts/juno/v18/x/feeshare/types"
+	"github.com/CosmosContracts/juno/v15/x/feeshare/keeper"
+	"github.com/CosmosContracts/juno/v15/x/feeshare/types"
 )
 
 // InitGenesis import module genesis
@@ -13,9 +13,7 @@ func InitGenesis(
 	k keeper.Keeper,
 	data types.GenesisState,
 ) {
-	if err := k.SetParams(ctx, data.Params); err != nil {
-		panic(err)
-	}
+	k.SetParams(ctx, data.Params)
 
 	for _, share := range data.FeeShare {
 		contract := share.GetContractAddr()

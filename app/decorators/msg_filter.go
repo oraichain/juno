@@ -3,9 +3,8 @@ package decorators
 import (
 	"fmt"
 
-	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 )
 
 // MsgFilterDecorator defines an AnteHandler decorator for the v9 upgrade that

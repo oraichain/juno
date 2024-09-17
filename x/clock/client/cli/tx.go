@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	errorsmod "cosmossdk.io/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -15,8 +14,8 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/CosmosContracts/juno/v18/x/clock/keeper"
-	"github.com/CosmosContracts/juno/v18/x/clock/types"
+	"github.com/CosmosContracts/juno/v15/x/clock/keeper"
+	"github.com/CosmosContracts/juno/v15/x/clock/types"
 )
 
 // GetTxCmd bundles all the subcmds together so they appear under `clock tx`
@@ -80,7 +79,7 @@ func CmdAddContractProposal() *cobra.Command {
 			contractAddress := args[0]
 			// Valid address check
 			if _, err := sdk.AccAddressFromBech32(contractAddress); err != nil {
-				return errorsmod.Wrapf(
+				return sdkerrors.Wrapf(
 					sdkerrors.ErrInvalidAddress,
 					"invalid contract address: %s", err.Error(),
 				)
@@ -88,7 +87,7 @@ func CmdAddContractProposal() *cobra.Command {
 
 			for _, addr := range clockContracts.ContractAddresses {
 				if contractAddress == addr {
-					return errorsmod.Wrapf(
+					return sdkerrors.Wrapf(
 						sdkerrors.ErrInvalidAddress,
 						"duplicate contract address: %s", contractAddress,
 					)
@@ -169,7 +168,7 @@ func CmdRemoveContractProposal() *cobra.Command {
 
 			// Valid address check
 			if _, err := sdk.AccAddressFromBech32(contractAddress); err != nil {
-				return errorsmod.Wrapf(
+				return sdkerrors.Wrapf(
 					sdkerrors.ErrInvalidAddress,
 					"invalid contract address: %s", contractAddress,
 				)
@@ -187,7 +186,7 @@ func CmdRemoveContractProposal() *cobra.Command {
 			if count > 0 {
 				newContractAddresses = append(newContractAddresses[:index], newContractAddresses[:index+1]...)
 			} else {
-				return errorsmod.Wrapf(
+				return sdkerrors.Wrapf(
 					sdkerrors.ErrInvalidAddress,
 					"Cannot remove un-existed contract address: %s", contractAddress,
 				)

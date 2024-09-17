@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	appparams "github.com/CosmosContracts/juno/v18/app/params"
-	globalfeekeeper "github.com/CosmosContracts/juno/v18/x/globalfee/keeper"
-	"github.com/CosmosContracts/juno/v18/x/globalfee/types"
+	appparams "github.com/CosmosContracts/juno/v15/app/params"
+	globalfeekeeper "github.com/CosmosContracts/juno/v15/x/globalfee/keeper"
+	"github.com/CosmosContracts/juno/v15/x/globalfee/types"
 )
 
 func TestDefaultGenesis(t *testing.T) {
@@ -119,7 +119,7 @@ func setupTestStore(t *testing.T) (sdk.Context, appparams.EncodingConfig, global
 	// ms.MountStoreWithDB(tkeyParams, storetypes.StoreTypeTransient, db)
 	require.NoError(t, ms.LoadLatestVersion())
 
-	globalfeeKeeper := globalfeekeeper.NewKeeper(encCfg.Marshaler, keyParams, "juno1jv65s3grqf6v6jl3dp4t6c9t9rk99cd83d88wr")
+	globalfeeKeeper := globalfeekeeper.NewKeeper(encCfg.Marshaler, keyParams)
 
 	ctx := sdk.NewContext(ms, tmproto.Header{
 		Height:  1234567,

@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/CosmosContracts/juno/v18/x/clock/keeper"
-	"github.com/CosmosContracts/juno/v18/x/clock/types"
+	"github.com/CosmosContracts/juno/v15/x/clock/keeper"
+	"github.com/CosmosContracts/juno/v15/x/clock/types"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

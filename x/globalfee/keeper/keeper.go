@@ -5,34 +5,23 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CosmosContracts/juno/v18/x/globalfee/types"
+	"github.com/CosmosContracts/juno/v15/x/globalfee/types"
 )
 
 // Keeper of the globalfee store
 type Keeper struct {
 	cdc      codec.BinaryCodec
 	storeKey storetypes.StoreKey
-
-	// the address capable of executing a MsgUpdateParams message. Typically, this
-	// should be the x/gov module account.
-	authority string
 }
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	key storetypes.StoreKey,
-	authority string,
 ) Keeper {
 	return Keeper{
-		cdc:       cdc,
-		storeKey:  key,
-		authority: authority,
+		cdc:      cdc,
+		storeKey: key,
 	}
-}
-
-// GetAuthority returns the x/globalfee module's authority.
-func (k Keeper) GetAuthority() string {
-	return k.authority
 }
 
 // SetParams sets the x/globalfee module parameters.

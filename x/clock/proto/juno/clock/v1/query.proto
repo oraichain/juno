@@ -6,7 +6,7 @@ import "google/api/annotations.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "juno/clock/v1/genesis.proto";
 
-option go_package = "github.com/CosmosContracts/juno/v18/x/clock/types";
+option go_package = "github.com/CosmosContracts/juno/v15/x/clock/types";
 
 // Query defines the gRPC querier service.
 service Query {

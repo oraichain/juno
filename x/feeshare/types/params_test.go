@@ -3,19 +3,19 @@ package types
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/stretchr/testify/require"
 )
 
-// func TestParamKeyTable(t *testing.T) {
-// 	require.IsType(t, paramtypes.KeyTable{}, ParamKeyTable())
-// 	require.NotEmpty(t, ParamKeyTable())
-// }
+func TestParamKeyTable(t *testing.T) {
+	require.IsType(t, paramtypes.KeyTable{}, ParamKeyTable())
+	require.NotEmpty(t, ParamKeyTable())
+}
 
-func TestDefaultParams(t *testing.T) {
+func TestParamSetPairs(t *testing.T) {
 	params := DefaultParams()
-	require.NotEmpty(t, params)
+	require.NotEmpty(t, params.ParamSetPairs())
 }
 
 func TestParamsValidate(t *testing.T) {

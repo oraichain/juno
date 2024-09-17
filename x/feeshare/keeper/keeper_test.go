@@ -1,22 +1,22 @@
 package keeper_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	"github.com/stretchr/testify/suite"
-
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	"github.com/stretchr/testify/suite"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/CosmosContracts/juno/v18/app"
-	"github.com/CosmosContracts/juno/v18/x/feeshare/keeper"
-	"github.com/CosmosContracts/juno/v18/x/feeshare/types"
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/CosmosContracts/juno/v15/app"
+	"github.com/CosmosContracts/juno/v15/x/feeshare/keeper"
+	"github.com/CosmosContracts/juno/v15/x/feeshare/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
@@ -42,22 +42,22 @@ type IntegrationTestSuite struct {
 
 func (s *IntegrationTestSuite) SetupTest() {
 	isCheckTx := false
-	s.app = app.Setup(s.T())
+	s.app = app.Setup(s.T(), isCheckTx, 1)
 
 	s.ctx = s.app.BaseApp.NewContext(isCheckTx, tmproto.Header{
-		ChainID: "testing",
+		ChainID: fmt.Sprintf("test-chain-%s", tmrand.Str(4)),
 		Height:  9,
 		Time:    time.Now().UTC(),
 	})
 
 	queryHelper := baseapp.NewQueryServerTestHelper(s.ctx, s.app.InterfaceRegistry())
-	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.AppKeepers.FeeShareKeeper))
+	types.RegisterQueryServer(queryHelper, keeper.NewQuerier(s.app.FeeShareKeeper))
 
 	s.queryClient = types.NewQueryClient(queryHelper)
-	s.bankKeeper = s.app.AppKeepers.BankKeeper
-	s.accountKeeper = s.app.AppKeepers.AccountKeeper
-	s.feeShareMsgServer = s.app.AppKeepers.FeeShareKeeper
-	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(&s.app.AppKeepers.WasmKeeper)
+	s.bankKeeper = s.app.BankKeeper
+	s.accountKeeper = s.app.AccountKeeper
+	s.feeShareMsgServer = s.app.FeeShareKeeper
+	s.wasmMsgServer = wasmkeeper.NewMsgServerImpl(wasmkeeper.NewDefaultPermissionKeeper(s.app.WasmKeeper))
 }
 
 func (s *IntegrationTestSuite) FundAccount(ctx sdk.Context, addr sdk.AccAddress, amounts sdk.Coins) error {

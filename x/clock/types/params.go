@@ -1,8 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -30,7 +28,7 @@ func NewParams(
 func (p Params) Validate() error {
 	minimumGas := uint64(100_000)
 	if p.ContractGasLimit < minimumGas {
-		return errorsmod.Wrapf(
+		return sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidRequest,
 			"invalid contract gas limit: %d. Must be above %d", p.ContractGasLimit, minimumGas,
 		)
@@ -39,7 +37,7 @@ func (p Params) Validate() error {
 	for _, addr := range p.ContractAddresses {
 		// Valid address check
 		if _, err := sdk.AccAddressFromBech32(addr); err != nil {
-			return errorsmod.Wrapf(
+			return sdkerrors.Wrapf(
 				sdkerrors.ErrInvalidAddress,
 				"invalid contract address: %s", err.Error(),
 			)
@@ -53,7 +51,7 @@ func (p Params) Validate() error {
 			}
 
 			if count > 1 {
-				return errorsmod.Wrapf(
+				return sdkerrors.Wrapf(
 					sdkerrors.ErrInvalidAddress,
 					"duplicate contract address: %s", addr,
 				)

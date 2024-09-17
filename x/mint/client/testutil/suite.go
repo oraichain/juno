@@ -5,16 +5,15 @@ import (
 	"strings"
 
 	"github.com/stretchr/testify/suite"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/CosmosContracts/juno/v15/x/mint/client/cli"
+	minttypes "github.com/CosmosContracts/juno/v15/x/mint/types"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/CosmosContracts/juno/v18/x/mint/client/cli"
-	minttypes "github.com/CosmosContracts/juno/v18/x/mint/types"
 )
 
 type IntegrationTestSuite struct {
@@ -44,9 +43,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	genesisState[minttypes.ModuleName] = mintDataBz
 	s.cfg.GenesisState = genesisState
 
-	baseDir := s.T().TempDir()
-	s.network, err = network.New(s.T(), baseDir, s.cfg)
-	s.Require().NoError(err)
+	s.network = network.New(s.T(), s.cfg)
 
 	_, err = s.network.WaitForHeight(1)
 	s.Require().NoError(err)

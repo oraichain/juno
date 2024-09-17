@@ -1,8 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerror "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -55,7 +53,7 @@ func (fs FeeShare) Validate() error {
 	}
 
 	if fs.WithdrawerAddress == "" {
-		return errorsmod.Wrap(sdkerror.ErrInvalidAddress, "withdrawer address cannot be empty")
+		return sdkerror.Wrap(sdkerror.ErrInvalidAddress, "withdrawer address cannot be empty")
 	}
 
 	if _, err := sdk.AccAddressFromBech32(fs.WithdrawerAddress); err != nil {

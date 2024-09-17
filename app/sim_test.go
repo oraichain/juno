@@ -5,43 +5,37 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
-	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	"github.com/CosmWasm/wasmd/x/wasm"
 	"github.com/stretchr/testify/require"
-
-	dbm "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/server"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
+	dbm "github.com/tendermint/tm-db"
 )
 
 // Get flags every time the simulator is run
 func init() {
-	simcli.GetSimulatorFlags()
+	simapp.GetSimulatorFlags()
 }
 
 type StoreKeysPrefixes struct {
-	A        storetypes.StoreKey
-	B        storetypes.StoreKey
+	A        sdk.StoreKey
+	B        sdk.StoreKey
 	Prefixes [][]byte
 }
 
 // SetupSimulation wraps simapp.SetupSimulation in order to create any export directory if they do not exist yet
-func SetupSimulation() (simtypes.Config, dbm.DB, string, log.Logger, bool, error) {
-	config := simcli.NewConfigFromFlags()
-	config.ChainID = SimAppChainID
-
-	db, dir, logger, skip, err := simtestutil.SetupSimulation(config, "leveldb-app-sim", "Simulation", simcli.FlagVerboseValue, simcli.FlagEnabledValue)
+func SetupSimulation(dirPrefix, dbName string) (simtypes.Config, dbm.DB, string, log.Logger, bool, error) {
+	config, db, dir, logger, skip, err := simapp.SetupSimulation(dirPrefix, dbName)
 	if err != nil {
 		return simtypes.Config{}, nil, "", nil, false, err
 	}
@@ -89,7 +83,7 @@ func fauxMerkleModeOpt(bapp *baseapp.BaseApp) {
 }
 
 func TestFullAppSimulation(t *testing.T) {
-	config, db, dir, logger, skip, err := SetupSimulation()
+	config, db, dir, logger, skip, err := SetupSimulation("leveldb-app-sim", "Simulation")
 	if skip {
 		t.Skip("skipping application simulation")
 	}
@@ -99,23 +93,10 @@ func TestFullAppSimulation(t *testing.T) {
 		db.Close()
 		require.NoError(t, os.RemoveAll(dir))
 	}()
-
-	appOptions := make(simtestutil.AppOptionsMap, 0)
-	appOptions[flags.FlagHome] = DefaultNodeHome
-	appOptions[server.FlagInvCheckPeriod] = simcli.FlagPeriodValue
-
-	var emptyWasmOption []wasmkeeper.Option
-	app := New(
-		logger,
-		db,
-		nil,
-		true,
-		wasmtypes.EnableAllProposals,
-		appOptions,
-		emptyWasmOption,
-		fauxMerkleModeOpt,
-		baseapp.SetChainID(SimAppChainID),
-	)
+	encConf := MakeEncodingConfig()
+	updateAppSimulationFlag(true)
+	app := New(logger, db, nil, true, map[int64]bool{}, t.TempDir(), simapp.FlagPeriodValue, encConf,
+		wasm.EnableAllProposals, simapp.EmptyAppOptions{}, nil, fauxMerkleModeOpt)
 	require.Equal(t, "juno", app.Name())
 
 	// run randomized simulation
@@ -123,20 +104,32 @@ func TestFullAppSimulation(t *testing.T) {
 		t,
 		os.Stdout,
 		app.BaseApp,
-		simtestutil.AppStateFn(app.appCodec, app.SimulationManager(), NewDefaultGenesisState(app.appCodec)),
+		AppStateFn(app.appCodec, app.SimulationManager()),
 		simtypes.RandomAccounts, // Replace with own random account function if using keys other than secp256k1
-		simtestutil.SimulationOperations(app, app.AppCodec(), config),
+		simapp.SimulationOperations(app, app.AppCodec(), config),
 		app.ModuleAccountAddrs(),
 		config,
 		app.AppCodec(),
 	)
 
 	// export state and simParams before the simulation error is checked
-	err = simtestutil.CheckExportSimulation(app, config, simParams)
+	err = simapp.CheckExportSimulation(app, config, simParams)
 	require.NoError(t, err)
 	require.NoError(t, simErr)
 
 	if config.Commit {
-		simtestutil.PrintStats(db)
+		simapp.PrintStats(db)
 	}
+}
+
+// AppStateFn returns the initial application state using a genesis or the simulation parameters.
+// It panics if the user provides files for both of them.
+// If a file is not given for the genesis or the sim params, it creates a randomized one.
+func AppStateFn(codec codec.Codec, manager *module.SimulationManager) simtypes.AppStateFn {
+	// quick hack to setup app state genesis with our app modules
+	simapp.ModuleBasics = ModuleBasics
+	if simapp.FlagGenesisTimeValue == 0 { // always set to have a block time
+		simapp.FlagGenesisTimeValue = time.Now().Unix()
+	}
+	return simapp.AppStateFn(codec, manager)
 }

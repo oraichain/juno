@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/CosmosContracts/juno/v18/app"
-	"github.com/CosmosContracts/juno/v18/x/feeshare"
-	"github.com/CosmosContracts/juno/v18/x/feeshare/types"
+	"github.com/stretchr/testify/suite"
+
+	"github.com/CosmosContracts/juno/v15/app"
+	"github.com/CosmosContracts/juno/v15/x/feeshare"
+	"github.com/CosmosContracts/juno/v15/x/feeshare/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type GenesisTestSuite struct {
@@ -29,10 +28,8 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (suite *GenesisTestSuite) SetupTest() {
-	app := app.Setup(suite.T())
-	ctx := app.BaseApp.NewContext(false, tmproto.Header{
-		ChainID: "testing",
-	})
+	app := Setup(false)
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{})
 
 	suite.app = app
 	suite.ctx = ctx
@@ -103,14 +100,14 @@ func (suite *GenesisTestSuite) TestFeeShareInitGenesis() {
 
 			if tc.expPanic {
 				suite.Require().Panics(func() {
-					feeshare.InitGenesis(suite.ctx, suite.app.AppKeepers.FeeShareKeeper, tc.genesis)
+					feeshare.InitGenesis(suite.ctx, suite.app.FeeShareKeeper, tc.genesis)
 				})
 			} else {
 				suite.Require().NotPanics(func() {
-					feeshare.InitGenesis(suite.ctx, suite.app.AppKeepers.FeeShareKeeper, tc.genesis)
+					feeshare.InitGenesis(suite.ctx, suite.app.FeeShareKeeper, tc.genesis)
 				})
 
-				params := suite.app.AppKeepers.FeeShareKeeper.GetParams(suite.ctx)
+				params := suite.app.FeeShareKeeper.GetParams(suite.ctx)
 				suite.Require().Equal(tc.genesis.Params, params)
 			}
 		})

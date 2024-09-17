@@ -8,14 +8,14 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/spf13/cobra"
-	viper "github.com/spf13/viper"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	scconfig "github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	viper "github.com/spf13/viper"
 )
 
 type JunoCustomClient struct {
@@ -25,8 +25,7 @@ type JunoCustomClient struct {
 	GasAdjustment string `mapstructure:"gas-adjustment" json:"gas-adjustment"`
 
 	Fees       string `mapstructure:"fees" json:"fees"`
-	FeeGranter string `mapstructure:"fee-granter" json:"fee-granter"`
-	FeePayer   string `mapstructure:"fee-payer" json:"fee-payer"`
+	FeeAccount string `mapstructure:"fee-account" json:"fee-account"`
 
 	Note string `mapstructure:"note" json:"note"`
 }
@@ -59,8 +58,7 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 		os.Getenv("JUNOD_GAS_ADJUSTMENT"),
 
 		os.Getenv("JUNOD_FEES"),
-		os.Getenv("JUNOD_FEE_GRANTER"),
-		os.Getenv("JUNOD_FEE_PAYER"),
+		os.Getenv("JUNOD_FEE_ACCOUNT"),
 
 		os.Getenv("JUNOD_NOTE"),
 	}
@@ -99,10 +97,8 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 			cmd.Println(jcc.GasAdjustment)
 		case flags.FlagFees:
 			cmd.Println(jcc.Fees)
-		case flags.FlagFeeGranter:
-			cmd.Println(jcc.FeeGranter)
-		case flags.FlagFeePayer:
-			cmd.Println(jcc.FeePayer)
+		case flags.FlagFeeAccount:
+			cmd.Println(jcc.FeeAccount)
 		case flags.FlagNote:
 			cmd.Println(jcc.Note)
 		default:
@@ -135,10 +131,8 @@ func runConfigCmd(cmd *cobra.Command, args []string) error {
 		case flags.FlagFees:
 			jcc.Fees = value
 			jcc.GasPrices = "" // resets since we can only use 1 at a time
-		case flags.FlagFeeGranter:
-			jcc.FeeGranter = value
-		case flags.FlagFeePayer:
-			jcc.FeePayer = value
+		case flags.FlagFeeAccount:
+			jcc.FeeAccount = value
 		case flags.FlagNote:
 			jcc.Note = value
 		default:
@@ -187,8 +181,7 @@ gas-adjustment = "{{ .GasAdjustment }}"
 
 # Fees to use instead of set gas prices
 fees = "{{ .Fees }}"
-fee-granter = "{{ .FeeGranter }}"
-fee-payer = "{{ .FeePayer }}"
+fee-account = "{{ .FeeAccount }}"
 
 # Memo to include in your Transactions
 note = "{{ .Note }}"

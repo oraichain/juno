@@ -1,16 +1,14 @@
 package v13
 
 import (
-	packetforwardtypes "github.com/cosmos/ibc-apps/middleware/packet-forward-middleware/v7/router/types"
-	ibchookstypes "github.com/cosmos/ibc-apps/modules/ibc-hooks/v7/types"
-	icacontrollertypes "github.com/cosmos/ibc-go/v7/modules/apps/27-interchain-accounts/controller/types"
-	ibcfeetypes "github.com/cosmos/ibc-go/v7/modules/apps/29-fee/types"
-
+	tokenfactorytypes "github.com/CosmWasm/token-factory/x/tokenfactory/types"
+	"github.com/CosmosContracts/juno/v15/app/upgrades"
+	feesharetypes "github.com/CosmosContracts/juno/v15/x/feeshare/types"
 	store "github.com/cosmos/cosmos-sdk/store/types"
-
-	"github.com/CosmosContracts/juno/v18/app/upgrades"
-	feesharetypes "github.com/CosmosContracts/juno/v18/x/feeshare/types"
-	tokenfactorytypes "github.com/CosmosContracts/juno/v18/x/tokenfactory/types"
+	icacontrollertypes "github.com/cosmos/ibc-go/v4/modules/apps/27-interchain-accounts/controller/types"
+	ibcfeetypes "github.com/cosmos/ibc-go/v4/modules/apps/29-fee/types"
+	ibchookstypes "github.com/osmosis-labs/osmosis/x/ibc-hooks/types"
+	packetforwardtypes "github.com/strangelove-ventures/packet-forward-middleware/v4/router/types"
 )
 
 // UpgradeName defines the on-chain upgrade name for the upgrade.

@@ -4,7 +4,7 @@ package juno.clock.v1;
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-option go_package = "github.com/CosmosContracts/juno/v18/x/clock/types";
+option go_package = "github.com/CosmosContracts/juno/v15/x/clock/types";
 
 // GenesisState - initial state of module
 message GenesisState {
