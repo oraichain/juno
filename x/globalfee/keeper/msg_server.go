@@ -2,8 +2,7 @@ package keeper
 
 import (
 	"context"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"fmt"
 
 	"github.com/CosmosContracts/juno/v15/x/globalfee/types"
 )
@@ -23,10 +22,11 @@ func NewMsgServerImpl(k Keeper) types.MsgServer {
 
 func (ms msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 
-	ctx := sdk.UnwrapSDKContext(goCtx)
-	if err := ms.SetParams(ctx, req.Params); err != nil {
-		return nil, err
-	}
+	return nil, fmt.Errorf("UpdateParams for globalfee is not currently supported!. Please use it via gov proposal")
+	// ctx := sdk.UnwrapSDKContext(goCtx)
+	// if err := ms.SetParams(ctx, req.Params); err != nil {
+	// 	return nil, err
+	// }
 
-	return &types.MsgUpdateParamsResponse{}, nil
+	// return &types.MsgUpdateParamsResponse{}, nil
 }
