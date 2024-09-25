@@ -7,27 +7,56 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbm "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 
-	"github.com/cosmos/cosmos-sdk/store"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	"cosmossdk.io/math"
+	"cosmossdk.io/store"
+	storetypes "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 
-	appparams "github.com/CosmosContracts/juno/v18/app/params"
+	storemetrics "cosmossdk.io/store/metrics"
 	globalfeekeeper "github.com/CosmosContracts/juno/v18/x/globalfee/keeper"
 	"github.com/CosmosContracts/juno/v18/x/globalfee/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
+// EncodingConfig specifies the concrete encoding types to use for a given app.
+// This is provided for compatibility between protobuf and amino implementations.
+type EncodingConfig struct {
+	InterfaceRegistry codectypes.InterfaceRegistry
+	Marshaler         codec.Codec
+	TxConfig          client.TxConfig
+	Amino             *codec.LegacyAmino
+}
+
+// MakeEncodingConfig creates an EncodingConfig for an amino based test configuration.
+func MakeEncodingConfig() EncodingConfig {
+	amino := codec.NewLegacyAmino()
+	interfaceRegistry := codectypes.NewInterfaceRegistry()
+	marshaler := codec.NewProtoCodec(interfaceRegistry)
+	txCfg := tx.NewTxConfig(marshaler, tx.DefaultSignModes)
+
+	return EncodingConfig{
+		InterfaceRegistry: interfaceRegistry,
+		Marshaler:         marshaler,
+		TxConfig:          txCfg,
+		Amino:             amino,
+	}
+}
+
 func TestDefaultGenesis(t *testing.T) {
-	encCfg := appparams.MakeEncodingConfig()
+	encCfg := MakeEncodingConfig()
 	gotJSON := AppModuleBasic{}.DefaultGenesis(encCfg.Marshaler)
 	assert.JSONEq(t, `{"params":{"minimum_gas_prices":[]}}`, string(gotJSON), string(gotJSON))
 }
 
 func TestValidateGenesis(t *testing.T) {
-	encCfg := appparams.MakeEncodingConfig()
+	encCfg := MakeEncodingConfig()
 	specs := map[string]struct {
 		src    string
 		expErr bool
@@ -81,12 +110,12 @@ func TestInitExportGenesis(t *testing.T) {
 	}{
 		"single fee": {
 			src: `{"params":{"minimum_gas_prices":[{"denom":"ALX", "amount":"1"}]}}`,
-			exp: types.GenesisState{Params: types.Params{MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", sdk.NewInt(1)))}},
+			exp: types.GenesisState{Params: types.Params{MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.NewInt(1)))}},
 		},
 		"multiple fee options": {
 			src: `{"params":{"minimum_gas_prices":[{"denom":"ALX", "amount":"1"}, {"denom":"BLX", "amount":"0.001"}]}}`,
-			exp: types.GenesisState{Params: types.Params{MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", sdk.NewInt(1)),
-				sdk.NewDecCoinFromDec("BLX", sdk.NewDecWithPrec(1, 3)))}},
+			exp: types.GenesisState{Params: types.Params{MinimumGasPrices: sdk.NewDecCoins(sdk.NewDecCoin("ALX", math.NewInt(1)),
+				sdk.NewDecCoinFromDec("BLX", math.LegacyNewDecWithPrec(1, 3)))}},
 		},
 		"no fee set": {
 			src: `{"params":{}}`,
@@ -96,7 +125,7 @@ func TestInitExportGenesis(t *testing.T) {
 	for name, spec := range specs {
 		t.Run(name, func(t *testing.T) {
 			ctx, encCfg, keeper := setupTestStore(t)
-			m := NewAppModule(encCfg.Marshaler, keeper, "stake")
+			m := NewAppModule(encCfg.Marshaler, keeper)
 			m.InitGenesis(ctx, encCfg.Marshaler, []byte(spec.src))
 			gotJSON := m.ExportGenesis(ctx, encCfg.Marshaler)
 			var got types.GenesisState
@@ -107,12 +136,12 @@ func TestInitExportGenesis(t *testing.T) {
 	}
 }
 
-func setupTestStore(t *testing.T) (sdk.Context, appparams.EncodingConfig, globalfeekeeper.Keeper) {
+func setupTestStore(t *testing.T) (sdk.Context, EncodingConfig, globalfeekeeper.Keeper) {
 	t.Helper()
 	db := dbm.NewMemDB()
-	ms := store.NewCommitMultiStore(db)
-	encCfg := appparams.MakeEncodingConfig()
-	keyParams := sdk.NewKVStoreKey(types.StoreKey)
+	ms := store.NewCommitMultiStore(db, log.NewNopLogger(), storemetrics.NewNoOpMetrics())
+	encCfg := MakeEncodingConfig()
+	keyParams := storetypes.NewKVStoreKey(types.StoreKey)
 	// globalfeeParams := sdk.NewKVStoreKey(types.StoreKey)
 	// tkeyParams := sdk.NewTransientStoreKey(paramstypes.TStoreKey)
 	ms.MountStoreWithDB(keyParams, storetypes.StoreTypeIAVL, db)

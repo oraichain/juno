@@ -3,7 +3,6 @@ package globalfee
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -24,14 +23,16 @@ import (
 	"github.com/CosmosContracts/juno/v18/x/globalfee/types"
 )
 
+const (
+
+	// ConsensusVersion defines the current x/clock module consensus version.
+	ConsensusVersion = 1
+)
+
 var (
 	_ module.AppModuleBasic   = AppModuleBasic{}
 	_ module.AppModuleGenesis = AppModule{}
-	_ module.AppModule        = AppModule{}
 )
-
-// ConsensusVersion defines the current x/globalfee module consensus version.
-const ConsensusVersion = 2
 
 // AppModuleBasic defines the basic application module used by the wasm module.
 type AppModuleBasic struct {
@@ -72,7 +73,7 @@ func (a AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux 
 }
 
 func (a AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
+	return cli.GetTxCmd()
 }
 
 func (a AppModuleBasic) GetQueryCmd() *cobra.Command {
@@ -91,35 +92,40 @@ type AppModule struct {
 	AppModuleBasic
 
 	keeper keeper.Keeper
-
-	// bondDenom is used solely for migration off of x/params
-	bondDenom string
 }
 
 // NewAppModule constructor
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
-	debondDenom string,
-) *AppModule {
-	return &AppModule{
+) AppModule {
+	return AppModule{
 		AppModuleBasic: AppModuleBasic{cdc: cdc},
 		keeper:         keeper,
-		bondDenom:      debondDenom,
 	}
+}
+
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
+
+// Name returns the x/tokenfactory module's name.
+func (am AppModule) Name() string {
+	return am.AppModuleBasic.Name()
 }
 
 func (a AppModule) InitGenesis(ctx sdk.Context, marshaler codec.JSONCodec, message json.RawMessage) []abci.ValidatorUpdate {
 	var genesisState types.GenesisState
 	marshaler.MustUnmarshalJSON(message, &genesisState)
-	// a.paramSpace.SetParamSet(ctx, &genesisState.Params)
-	_ = a.keeper.SetParams(ctx, genesisState.Params) // note: we may want to have this function return an error in the future.
+	_ = a.keeper.SetParams(ctx, genesisState.Params)
 	return nil
 }
 
 func (a AppModule) ExportGenesis(ctx sdk.Context, marshaler codec.JSONCodec) json.RawMessage {
 	params := a.keeper.GetParams(ctx)
-	genState := types.NewGenesisState(params)
+	genState := NewGenesisState(params)
 	return marshaler.MustMarshalJSON(genState)
 }
 
@@ -132,19 +138,18 @@ func (a AppModule) QuerierRoute() string {
 
 func (a AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(a.keeper))
-	types.RegisterQueryServer(cfg.QueryServer(), NewGrpcQuerier(a.keeper))
-
-	m := keeper.NewMigrator(a.keeper, a.bondDenom)
-	if err := cfg.RegisterMigration(types.ModuleName, 1, m.Migrate1to2); err != nil {
-		panic(fmt.Sprintf("failed to migrate x/%s from version 1 to 2: %v", types.ModuleName, err))
-	}
+	types.RegisterQueryServer(cfg.QueryServer(), keeper.NewQuerier(a.keeper))
 }
 
-func (a AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {
-}
-
-func (a AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+// BeginBlock executes all ABCI BeginBlock logic respective to the tokenfactory module.
+func (a AppModule) BeginBlock(_ context.Context) error {
 	return nil
+}
+
+// EndBlock returns the end blocker for the staking module. It returns no validator
+// updates.
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
+	return nil, nil
 }
 
 // ConsensusVersion is a sequence number for state-breaking change of the
