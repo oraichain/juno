@@ -37,22 +37,22 @@ func PrettyPrint(coins sdk.Coins) string {
 	return string(bz)
 }
 
-// CombinedFeeRequirement returns the global fee and min_gas_price combined and sorted.
+// CombinedGasPrices returns the global fee and min_gas_price combined and sorted.
 // Both globalFees and minGasPrices must be valid, but CombinedFeeRequirement
 // does not validate them, so it may return 0denom.
 // if globalfee is empty, CombinedFeeRequirement return sdk.Coins{}
-func CombinedFeeRequirement(globalFees, minGasPrices sdk.Coins) sdk.Coins {
+func CombinedGasPrices(globalFees, minGasPrices sdk.DecCoins) sdk.DecCoins {
 	// empty min_gas_price
 	if len(minGasPrices) == 0 {
 		return globalFees
 	}
 	// empty global fee is not possible if we set default global fee
 	if len(globalFees) == 0 && len(minGasPrices) != 0 {
-		return sdk.Coins{}
+		return sdk.DecCoins{}
 	}
 
 	// if min_gas_price denom is in globalfee, and the amount is higher than globalfee, add min_gas_price to allFees
-	var allFees sdk.Coins
+	var allFees sdk.DecCoins
 	for _, fee := range globalFees {
 		// min_gas_price denom in global fee
 		ok, c := Find(minGasPrices, fee.Denom)
@@ -67,17 +67,17 @@ func CombinedFeeRequirement(globalFees, minGasPrices sdk.Coins) sdk.Coins {
 }
 
 // Find replaces the functionality of Coins.Find from SDK v0.46.x
-func Find(coins sdk.Coins, denom string) (bool, sdk.Coin) {
+func Find(coins sdk.DecCoins, denom string) (bool, sdk.DecCoin) {
 	switch len(coins) {
 	case 0:
-		return false, sdk.Coin{}
+		return false, sdk.DecCoin{}
 
 	case 1:
 		coin := coins[0]
 		if coin.Denom == denom {
 			return true, coin
 		}
-		return false, sdk.Coin{}
+		return false, sdk.DecCoin{}
 
 	default:
 		midIdx := len(coins) / 2 // 2:1, 3:1, 4:2

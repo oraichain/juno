@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestContainZeroCoins(t *testing.T) {
@@ -58,30 +58,30 @@ func TestContainZeroCoins(t *testing.T) {
 // This sanitizing happens when the minGasPrice is set into the context.
 // (see baseapp.SetMinGasPrices in gaia/cmd/root.go line 221)
 func TestCombinedFeeRequirement(t *testing.T) {
-	zeroCoin1 := sdk.NewCoin("photon", math.ZeroInt())
-	zeroCoin2 := sdk.NewCoin("stake", math.ZeroInt())
-	zeroCoin3 := sdk.NewCoin("quark", math.ZeroInt())
-	coin1 := sdk.NewCoin("photon", math.NewInt(1))
-	coin2 := sdk.NewCoin("stake", math.NewInt(2))
-	coin1High := sdk.NewCoin("photon", math.NewInt(10))
-	coin2High := sdk.NewCoin("stake", math.NewInt(20))
-	coinNewDenom1 := sdk.NewCoin("Newphoton", math.NewInt(1))
-	coinNewDenom2 := sdk.NewCoin("Newstake", math.NewInt(1))
+	zeroCoin1 := sdk.NewDecCoin("photon", math.ZeroInt())
+	zeroCoin2 := sdk.NewDecCoin("stake", math.ZeroInt())
+	zeroCoin3 := sdk.NewDecCoin("quark", math.ZeroInt())
+	coin1 := sdk.NewDecCoin("photon", math.NewInt(1))
+	coin2 := sdk.NewDecCoin("stake", math.NewInt(2))
+	coin1High := sdk.NewDecCoin("photon", math.NewInt(10))
+	coin2High := sdk.NewDecCoin("stake", math.NewInt(20))
+	coinNewDenom1 := sdk.NewDecCoin("Newphoton", math.NewInt(1))
+	coinNewDenom2 := sdk.NewDecCoin("Newstake", math.NewInt(1))
 	// coins must be valid !!! and sorted!!!
-	coinsEmpty := sdk.Coins{}
-	coinsNonEmpty := sdk.Coins{coin1, coin2}.Sort()
-	coinsNonEmptyHigh := sdk.Coins{coin1High, coin2High}.Sort()
-	coinsNonEmptyOneHigh := sdk.Coins{coin1High, coin2}.Sort()
-	coinsNewDenom := sdk.Coins{coinNewDenom1, coinNewDenom2}.Sort()
-	coinsNewOldDenom := sdk.Coins{coin1, coinNewDenom1}.Sort()
-	coinsNewOldDenomHigh := sdk.Coins{coin1High, coinNewDenom1}.Sort()
-	coinsCointainZero := sdk.Coins{coin1, zeroCoin2}.Sort()
-	coinsCointainZeroNewDenom := sdk.Coins{coin1, zeroCoin3}.Sort()
-	coinsAllZero := sdk.Coins{zeroCoin1, zeroCoin2}.Sort()
+	coinsEmpty := sdk.DecCoins{}
+	coinsNonEmpty := sdk.DecCoins{coin1, coin2}.Sort()
+	coinsNonEmptyHigh := sdk.DecCoins{coin1High, coin2High}.Sort()
+	coinsNonEmptyOneHigh := sdk.DecCoins{coin1High, coin2}.Sort()
+	coinsNewDenom := sdk.DecCoins{coinNewDenom1, coinNewDenom2}.Sort()
+	coinsNewOldDenom := sdk.DecCoins{coin1, coinNewDenom1}.Sort()
+	coinsNewOldDenomHigh := sdk.DecCoins{coin1High, coinNewDenom1}.Sort()
+	coinsCointainZero := sdk.DecCoins{coin1, zeroCoin2}.Sort()
+	coinsCointainZeroNewDenom := sdk.DecCoins{coin1, zeroCoin3}.Sort()
+	coinsAllZero := sdk.DecCoins{zeroCoin1, zeroCoin2}.Sort()
 	tests := map[string]struct {
-		cGlobal  sdk.Coins
-		c        sdk.Coins
-		combined sdk.Coins
+		cGlobal  sdk.DecCoins
+		c        sdk.DecCoins
+		combined sdk.DecCoins
 	}{
 		"global fee empty, min fee empty, combined fee empty": {
 			cGlobal:  coinsEmpty,
@@ -121,12 +121,12 @@ func TestCombinedFeeRequirement(t *testing.T) {
 		"global fees and min fees have partial overlapping denom, one min fee amount > global fee amount, combined fee = overlapping highest": {
 			cGlobal:  coinsNonEmpty,
 			c:        coinsNewOldDenomHigh,
-			combined: sdk.Coins{coin1High, coin2},
+			combined: sdk.DecCoins{coin1High, coin2},
 		},
 		"global fees have zero fees, min fees have overlapping non-zero fees, combined fees = overlapping highest": {
 			cGlobal:  coinsCointainZero,
 			c:        coinsNonEmpty,
-			combined: sdk.Coins{coin1, coin2},
+			combined: sdk.DecCoins{coin1, coin2},
 		},
 		"global fees have zero fees, min fees have overlapping zero fees": {
 			cGlobal:  coinsCointainZero,
@@ -146,7 +146,7 @@ func TestCombinedFeeRequirement(t *testing.T) {
 		"global fees are all zero fees, min fees have overlapping non-zero fees, combined fee = overlapping highest": {
 			cGlobal:  coinsAllZero,
 			c:        coinsCointainZeroNewDenom,
-			combined: sdk.Coins{coin1, zeroCoin2},
+			combined: sdk.DecCoins{coin1, zeroCoin2},
 		},
 		"global fees are all zero fees, fees have one overlapping non-zero fee": {
 			cGlobal:  coinsAllZero,
@@ -157,7 +157,7 @@ func TestCombinedFeeRequirement(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			allFees := CombinedFeeRequirement(test.cGlobal, test.c)
+			allFees := CombinedGasPrices(test.cGlobal, test.c)
 			require.Equal(t, test.combined, allFees)
 		})
 	}
